@@ -2,13 +2,12 @@
 
 require_once dirname(__DIR__) . DIRECTORY_SEPARATOR . 'vendor\autoload.php';
 
-use src\Core\MQEmailConsumer;
-use src\Exceptions\CustomException;
+use src\Core\EmailTask;
 
-$mailTaskConsumer = new MQEmailConsumer();
-//$mailTaskConsumer->consume();
+$mailTaskConsumer = new EmailTask();
+$mailTaskConsumer->consume();
 
-call_user_func_array([$mailTaskConsumer, 'consume'], []);
+// call_user_func_array([$mailTaskConsumer, 'consume'], []);
 
 
 

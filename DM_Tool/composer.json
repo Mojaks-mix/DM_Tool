@@ -6,6 +6,8 @@
     },
     
     "require":{
-        "php-amqplib/php-amqplib": "^3.2"
+        "php-amqplib/php-amqplib": "^3.2",
+        "symfony/console": "^6.1",
+        "symfony/http-client": "^6.4"
     }
 }
