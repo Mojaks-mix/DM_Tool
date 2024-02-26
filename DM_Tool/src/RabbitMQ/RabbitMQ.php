@@ -9,7 +9,9 @@ abstract class RabbitMQ
     protected $connection;
     protected $channel;
     protected $queue;
-    protected string $exchange        = '';
+    protected string $exchange      = '';
+    protected string $exchangeType  = 'fanout';
+
 
     public function __construct()
     {
@@ -23,9 +25,11 @@ abstract class RabbitMQ
         $this->channel->queue_declare(...$queueConf);
     }
 
-    protected function setExchange(string $exchangeName)
+    protected function setExchange(string $exchangeName, string $exchangeType)
     {
-        $this->queue = $exchangeName;
+        $this->exchange     = $exchangeName;
+        $this->exchangeType = $exchangeType;
+        $this->channel->exchange_declare($exchangeName, $exchangeType);
     }
 
     protected function isJson($string)

@@ -6,14 +6,14 @@ use PhpAmqpLib\Message\AMQPMessage;
 use src\Contracts\ProducerInterface;
 use src\Exceptions\CustomException;
 
-abstract class DirectRabbitMQProducer extends RabbitMQ implements ProducerInterface
+class DirectRabbitMQProducer extends RabbitMQ implements ProducerInterface
 {
     private array $messageOptions   = [];
 
     public function __construct()
     {
         parent::__construct();
-        $this->setQueue(['task_queue', false, true, false, false]);
+        $this->setExchange('email_task', 'direct');
         $this->messageOptions = ['delivery_mode' => AMQPMessage::DELIVERY_MODE_PERSISTENT];
     }
 
@@ -24,7 +24,7 @@ abstract class DirectRabbitMQProducer extends RabbitMQ implements ProducerInterf
                 $data = json_encode($data);
             }
             $msg = new AMQPMessage($data, $this->messageOptions);
-            $this->channel->basic_publish($msg, $this->exchange, $this->queue);
+            $this->channel->basic_publish($msg, $this->exchange, 'VAS');
         } else {
             throw new CustomException("Data message cannot be empty!");
         }

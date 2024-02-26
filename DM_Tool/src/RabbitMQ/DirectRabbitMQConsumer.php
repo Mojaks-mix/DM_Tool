@@ -9,10 +9,12 @@ class DirectRabbitMQConsumer extends RabbitMQ implements ConsumerInterface
     public function __construct()
     {
         parent::__construct();
-        $this->setQueue(['task_queue', false, true, false, false]);
+        $this->setExchange('email_task', 'direct');
+        $this->setQueue(['direct_emial_queue', false, true, false, false]);
+        $this->channel->queue_bind('direct_emial_queue', 'email_task', 'VAS');
         $this->channel->basic_qos(null, 1, false);
         $this->channel->basic_consume(
-            'task_queue',
+            'direct_emial_queue',
             '',
             false,
             false,

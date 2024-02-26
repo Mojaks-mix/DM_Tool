@@ -3,8 +3,10 @@
 require_once dirname(__DIR__) . DIRECTORY_SEPARATOR . 'vendor\autoload.php';
 
 use src\Core\EmailTask;
+use src\RabbitMQ\DirectRabbitMQConsumer;
+use src\RabbitMQ\DirectRabbitMQProducer;
 
-$mailTaskConsumer = new EmailTask();
+$mailTaskConsumer = new EmailTask(new DirectRabbitMQProducer(),new DirectRabbitMQConsumer());
 $mailTaskConsumer->consume();
 
 // call_user_func_array([$mailTaskConsumer, 'consume'], []);
