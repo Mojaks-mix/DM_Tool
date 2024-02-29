@@ -7,5 +7,5 @@ Making a tool that will be solving single point of failure for producer.
   sudo supervisorctl update
   sudo service supervisor restart
   sudo supervisorctl status
-4-add corn: 0 15 * * * repo-path/src/Commands/MyCommand EmailTask consume
+4-add corn: 0 15 * * * php repo-path/src/Commands/MyCommand EmailTask consume
 5-open mailhog: localhost:8025
