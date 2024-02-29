@@ -12,7 +12,6 @@ abstract class RabbitMQ
     protected string $exchange      = '';
     protected string $exchangeType  = 'fanout';
 
-
     public function __construct()
     {
         $this->connection   = new AMQPStreamConnection('localhost', 5672, 'guest', 'guest');
@@ -32,7 +31,7 @@ abstract class RabbitMQ
         $this->channel->exchange_declare($exchangeName, $exchangeType);
     }
 
-    protected function isJson($string)
+    public function isJson($string)
     {
         if (!is_string($string)) {
             return false; // Not a string, cannot be JSON

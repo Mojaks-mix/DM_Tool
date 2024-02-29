@@ -7,6 +7,7 @@ use src\Contracts\PublisherInterface;
 class RedisPublisher implements PublisherInterface
 {
     private $conn;
+    private $lockKey;
 
     public function __construct()
     {
@@ -29,5 +30,11 @@ class RedisPublisher implements PublisherInterface
     {
         // Publish message to a specific channel
         $this->conn->publish($channel, $message);
+    }
+
+    public function setLock(string $lockKey, int $expiration = 5): bool
+    {
+        $this->lockKey = $lockKey;
+        return $this->conn->set($lockKey, 'locked', ['NX', 'EX' => $expiration]);
     }
 }

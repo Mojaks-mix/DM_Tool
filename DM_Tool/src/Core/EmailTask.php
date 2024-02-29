@@ -6,48 +6,66 @@ use src\Contracts\ConsumerInterface;
 use src\Contracts\ProducerInterface;
 use src\Contracts\PublisherInterface;
 use src\Contracts\SubscriberInterface;
-use src\RabbitMQ\BasicRabbitMQConsumer;
-use src\RabbitMQ\BasicRabbitMQProducer;
+use src\RabbitMQ\DirectRabbitMQConsumer;
+use src\RabbitMQ\DirectRabbitMQProducer;
 use src\Redis\RedisPublisher;
 use src\Redis\RedisSubscriber;
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Mime\Email;
+use Symfony\Component\Mailer\Mailer;
+use Symfony\Component\Mailer\Transport;
 
 class EmailTask
 {
-    public function __construct(private ProducerInterface $producer = new BasicRabbitMQProducer(),
-        private ConsumerInterface $consumer = new BasicRabbitMQConsumer(),
-        private PublisherInterface $pub = new RedisPublisher(),
-        private SubscriberInterface $sub = new RedisSubscriber()) {
+    public function __construct(private ProducerInterface $producer = new DirectRabbitMQProducer(),
+        private ConsumerInterface $consumer = new DirectRabbitMQConsumer(),
+        private PublisherInterface $pub     = new RedisPublisher(),
+        private SubscriberInterface $sub    = new RedisSubscriber()) {
         $this->consumer = $consumer;
         $this->producer = $producer;
     }
 
     public function consume()
     {
-        $this->consumer->consume();
+        $this->consumer->consume(function ($msg) {
+                $message = $msg->getBody();
+                if ($this->consumer->isJson($message)) {
+                    $message = json_decode($message);
+                }
+                //echo ' [x] Received ', var_dump($message), "\n";
+                $email = (new Email())
+                ->from("test@mytest.com")
+                ->to("tareqwaleed1996@gmail.com")
+                ->subject("Test")
+                ->text($message);
+
+                //$dsn = 'gmail+smtp://google-account:App-Key@default';
+                $dsn = 'smtp://localhost:1025';
+                $transport = Transport::fromDsn($dsn);
+
+                $mailer = new Mailer($transport);
+                $mailer->send($email);
+
+                sleep(1);
+                //echo " [x] Done\n";
+                $msg->ack(); //important
+                sleep(4);
+            }
+        );
     }
 
     public function produce(mixed $message)
     {
-        //the produser should check if there is a producer or not before produsing and if he can produce
-        //then he will pubish to redis that he is alive until he finish and update a variable showing his progress if he [produce it to the queue]
+        if ($this->pub->setLock('lock:heartbeat_channel', 3)) {
+            // Lock acquired, publish the message
+            $this->pub->publishToChannel('heartbeat_channel', 'alive');
+            $this->producer->produce($message);
+            echo "Email added to queue successfully\n";
 
-        $timeout = 3;
-        $lastProducerBeatTime = 3;
-        
-        $this->sub->subscribeToChannel('producer_heartbeat', function ($redis, $channel, $msg) use (&$lastProducerBeatTime, $timeout) {
-            echo time();
-            if ($msg === 'alive') {
-                echo "still waiting the other producer to finish, last heartbeat message was at $lastProducerBeatTime.\n";
-                $lastProducerBeatTime = time();
-            }
-        });
-        
-        while (true) {
-            if (time() - $lastProducerBeatTime > $timeout) {
-                $this->pub->publishToChannel('producer_heartbeat', 'alive');
-                $this->producer->produce($message);
-                exit;
+            // Release the lock (optional)
+            //$redis->del($lockKey);
+        } else {
+            echo "Failed to acquire lock. Another producer is already running.\n";
             }
         }
-    }
 }

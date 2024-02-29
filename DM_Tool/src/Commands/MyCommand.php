@@ -1,5 +1,7 @@
 <?php
 
+require dirname(dirname(__DIR__)) . '/vendor/autoload.php';
+
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Helper\Table;
@@ -11,68 +13,38 @@ use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Console\SingleCommandApplication;
 use Symfony\Component\HttpClient\HttpClient;
 
-require __DIR__ . '/../../vendor/autoload.php';
-
-
 (new SingleCommandApplication())
-    ->setName('app:weather')
+    ->setName('MyCommand')
 
-    ->addArgument('lat', InputArgument::REQUIRED)
-    ->addArgument('lng', InputArgument::REQUIRED)
-    ->addOption('days','d', InputOption::VALUE_OPTIONAL, 'days', 7)
+    ->addArgument('className', InputArgument::REQUIRED)
+    ->addArgument('methodName', InputArgument::REQUIRED)
+    ->addOption('parameters','-p', InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY, 'parameters', [])
     ->setCode(function (InputInterface $input, OutputInterface $output): int {
         //  getting inputs ( arguments , options ... )
-        $lat = (float)$input->getArgument('lat');
-        $lng = (float)$input->getArgument('lng');
-        $days = (int)$input->getOption('days');
-        $output->writeln(sprintf(" lat: %s, lng:%s , days:%s ", $lat, $lng, $days ));
+        $className = (string)$input->getArgument('className');
+        $methodName = (string)$input->getArgument('methodName');
+        $parameters = (array)$input->getOption('parameters');
 
-        //  asking question about temperature measurement unit
-        $helper = $this->getHelper('question');
-        $question = new Question("Do you prefer temperature in fahrenheit or celsius ? \n");
-        $question->setAutocompleterValues(['fahrenheit', 'celsius']);
-        $temperatureUnit = $helper->ask($input, $output, $question);
-        $output->writeln(sprintf(" temperature will be in :%s ", $temperatureUnit ));
+        //making the class fully qualified name
+        $className = 'src\\Core\\' . $className;
 
-        // showing a progress bar
-        $progressBar = new ProgressBar($output);
-        $progressBar->start();
-        sleep(1);
-        $progressBar->setProgress(50);
+        //to make a command call of a function
+        if (class_exists($className)) {
+            $class = new $className;
 
-        // fetching data from forecast api
-        $response = (HttpClient::create())->request('GET',
-            'https://api.open-meteo.com/v1/forecast',
-            ['query' => [
-                'latitude' => $lat,
-                'longitude' => $lng,
-                'daily' => 'temperature_2m_max,temperature_2m_min',
-                'timezone' => 'Asia/Amman',
-                'forecast_days' => $days,
-                'temperature_unit' => $temperatureUnit,
-            ]]
-        )->toArray();
-
-        // stopping progress bar
-        $progressBar->setProgress(100);
-        $progressBar->finish();
-        $output->writeln('');
-
-        // displaying data as table
-        $table = new Table($output);
-        $table->setHeaders(['Day', 'Temperature Min', 'Temperature Max']);
-        $rows = [];
-        foreach ($response['daily']['time'] as $key => $date) {
-            $rows[] = [
-                $date,
-                $response['daily']['temperature_2m_min'][$key],
-                $response['daily']['temperature_2m_max'][$key]
-            ];
-
+            if (method_exists($class, $methodName)) {
+                try {
+                    call_user_func_array([$class, $methodName], $parameters);
+                } catch (Exception $e) {
+                    // Handle the exception
+                    $output->writeln(sprintf("\n \"%s\" 'An error occurred: \"%s\"\n", $e->getMessage()));
+                } 
+            } else {
+                $output->writeln(sprintf("\n \"%s\" Method Doesn't Exist in Class \"%s\".\n", $methodName,$className ));
+            }
+        } else {
+            $output->writeln(sprintf("\n %s Class Doesn't Exist.\n", $className ));
         }
-        $table->setRows($rows);
-        $table->render();
-
 
         return Command::SUCCESS;
     })
