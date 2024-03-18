@@ -191,10 +191,8 @@ class Core extends SingleCommandApplication
                 return $this->addOption($name, null, $mode, 'Set ' . $name . ' to a string value', $defaultValue);
             case 'array':
                 return $this->addOption($name, null, InputOption::VALUE_IS_ARRAY | $mode, 'Set ' . $name . ' to an array value', $defaultValue);
-            case '':
-                return $this->addOption($name, null, $mode, 'Set ' . $name . "Value for parameter $name", $defaultValue);     
             default:
-                throw new \InvalidArgumentException('Unsupported type: ' . $type);
+                return $this->addOption($name, null, $mode, 'Set ' . $name . "Value for parameter $name", $defaultValue);
         }
     }
 
@@ -230,9 +228,9 @@ class Core extends SingleCommandApplication
 
     protected function processCommand(): void{
         if(str_contains($this->command ?? "", '.')){
-            $parts = explode('.', $this->command);
+            $parts = explode('.', $this->command);    
+            $this->className = $parts[0];
             if (count($parts) === 2) {
-                $this->className = $parts[0];
                 $this->methodName = $parts[1];
             }
         }
