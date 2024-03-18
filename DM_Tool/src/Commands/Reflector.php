@@ -11,7 +11,8 @@ trait Reflector{
         $mandatoryParams = [];
         foreach ($parameters as $parameter) {
             if ($parameter->isDefaultValueAvailable()) {
-                $optionalParams[] = [$parameter->getName(), $parameter->getType(), $parameter->getDefaultValue()];
+                $defaultValue = ($parameter->getType() == 'array') ? var_export($parameter->getDefaultValue(), true) : $parameter->getDefaultValue();
+                $optionalParams[] = [$parameter->getName(), $parameter->getType(), $defaultValue];
             } else {
                 $mandatoryParams[] = [$parameter->getName(), $parameter->getType()];
             }
