@@ -27,8 +27,7 @@ class Core extends SingleCommandApplication
     protected string|null $className;
     
 
-    public function __construct(InputInterface $input)
-    {
+    public function __construct(InputInterface $input){
         $this->corePath      = dirname(__DIR__) . DIRECTORY_SEPARATOR ."Core/*.php";
         $this->command = $input->getFirstArgument();
         $this->processCommand();
@@ -36,19 +35,17 @@ class Core extends SingleCommandApplication
         parent::__construct();
     }
 
-    protected function configure()
-    {
+    protected function configure(){
         $this
             ->setDescription('Dynamic command to call methods inside classes')
             ->addOption('classes', 'c', InputOption::VALUE_NONE, 'Show available classes and their methods')
             ->addOption('methods', 'm', InputOption::VALUE_NONE, 'Show methods of a specific class')
             ->addOption('parameters', 'p', InputOption::VALUE_NONE, 'Show parameters of a specific method')
-            ->addArgument('command', InputArgument::OPTIONAL, "Execute a class' method\nFormat: Class.Method -parameter_name=vlaue ...")
+            ->addArgument('command', InputArgument::OPTIONAL, "Execute a class' method\nFormat: Class.Method --parameter_name=vlaue ...")
             ->setMethodParametersOptions();
     }
     
-    protected function execute(InputInterface $input, OutputInterface $output)
-    {
+    protected function execute(InputInterface $input, OutputInterface $output){
         if ($input->getOption('classes') || $input->getOption('methods') || $input->getOption('parameters')) {
             $this->handleOptions($input, $output);
         } else {
@@ -58,8 +55,7 @@ class Core extends SingleCommandApplication
         return Command::SUCCESS;
     }
     
-    protected function handleOptions(InputInterface $input, OutputInterface $output)
-    {
+    protected function handleOptions(InputInterface $input, OutputInterface $output){
         if ($input->getOption('classes')) {
             $this->showAvailableClasses($output);
         }
@@ -73,8 +69,7 @@ class Core extends SingleCommandApplication
         }
     }
 
-    protected function handleCommand(InputInterface $input, OutputInterface $output)
-    {
+    protected function handleCommand(InputInterface $input, OutputInterface $output){
         if ($this->checkCommandFormat()) {
             $this->customErrorMessage('Invalid command format. Use: className.methodName', $output);
         }
@@ -97,8 +92,7 @@ class Core extends SingleCommandApplication
         }
     }
 
-    protected function showAvailableClasses(OutputInterface $output)
-    {
+    protected function showAvailableClasses(OutputInterface $output){
         $classesAndMethods = $this->getClassesAndMethods($this->corePath, $this->coreNamespace);  
 
         $table = new Table($output);
@@ -112,8 +106,7 @@ class Core extends SingleCommandApplication
         $table->render();
     }
     
-    protected function showClassMethods(OutputInterface $output)
-    {
+    protected function showClassMethods(OutputInterface $output){
         if (!$this->checkClassExists($this->classFullName)) {
             $this->customErrorMessage("Class $this->className not found", $output);
         }
@@ -129,8 +122,7 @@ class Core extends SingleCommandApplication
         $table->render();
     }
     
-    protected function showMethodParameters(OutputInterface $output)
-    {   
+    protected function showMethodParameters(OutputInterface $output){   
         if (!$this->checkClassExists($this->classFullName)) {
             $this->customErrorMessage("Class $this->className not found", $output);
         }
@@ -174,15 +166,36 @@ class Core extends SingleCommandApplication
                     $parameters = $method->getParameters();
 
                     foreach ($parameters as $parameter) {
-                        $paramName = $parameter->getName();
-                        $defaultValue = $parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : null;
-                        $mode = $parameter->isDefaultValueAvailable() ? InputOption::VALUE_OPTIONAL : InputOption::VALUE_REQUIRED;
-                        $this->addOption($paramName, null, $mode, "Value for parameter $paramName", $defaultValue);
+                        $this->convertToOption($parameter);
                     }
                 }
             }
         }
         return $this;
+    }
+
+    protected function convertToOption(\ReflectionParameter $parameter){
+        $type = $parameter->getType();
+        $name = $parameter->getName();
+        $mode = $parameter->isDefaultValueAvailable() ? InputOption::VALUE_OPTIONAL : InputOption::VALUE_REQUIRED;
+        $defaultValue = $parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : null;
+
+        switch ($type) {
+            case 'bool':
+                return $this->addOption($name, null, $mode, 'Set this option if ' . $name . ' is true', $defaultValue);
+            case 'int':
+                return $this->addOption($name, null, $mode, 'Set ' . $name . ' to a numeric value', $defaultValue);
+            case 'double':
+                return $this->addOption($name, null, $mode, 'Set ' . $name . ' to a numeric value', $defaultValue);
+            case 'string':
+                return $this->addOption($name, null, $mode, 'Set ' . $name . ' to a string value', $defaultValue);
+            case 'array':
+                return $this->addOption($name, null, InputOption::VALUE_IS_ARRAY | $mode, 'Set ' . $name . ' to an array value', $defaultValue);
+            case '':
+                return $this->addOption($name, null, $mode, 'Set ' . $name . "Value for parameter $name", $defaultValue);     
+            default:
+                throw new \InvalidArgumentException('Unsupported type: ' . $type);
+        }
     }
 
     protected function customErrorMessage(string $message, OutputInterface $output): void{
