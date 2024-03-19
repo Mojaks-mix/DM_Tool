@@ -15,5 +15,7 @@ Making a tool that will be solving single point of failure for producer.
   
 4-add corn: 0 15 * * * php repo-path/src/Commands/Core.php EmailTask.produce --message=hello
 -
-5-open mailhog: localhost:8025
+5-test using: php repo-path/src/Commands/Core.php EmailTask.produce --message=hello
+-
+6-open mailhog: localhost:8025, http://localhost:15672/#/queues
 -
