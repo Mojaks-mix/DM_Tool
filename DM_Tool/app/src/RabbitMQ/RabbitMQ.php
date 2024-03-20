@@ -14,7 +14,7 @@ abstract class RabbitMQ
 
     public function __construct()
     {
-        $this->connection   = new AMQPStreamConnection('localhost', 5672, 'guest', 'guest');
+        $this->connection = new AMQPStreamConnection('rabbitmq', 5672, 'guest', 'guest');
         $this->channel      = $this->connection->channel();
     }
 

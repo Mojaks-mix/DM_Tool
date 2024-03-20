@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+
+  php:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: DM_Tool
+    restart: always
+    working_dir: /home/
+    volumes:
+      - ../app:/home/app
+    depends_on:
+      - rabbitmq
+      - mailhog
+      - redis

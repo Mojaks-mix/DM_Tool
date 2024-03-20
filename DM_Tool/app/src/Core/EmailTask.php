@@ -10,7 +10,6 @@ use src\RabbitMQ\DirectRabbitMQConsumer;
 use src\RabbitMQ\DirectRabbitMQProducer;
 use src\Redis\RedisPublisher;
 use src\Redis\RedisSubscriber;
-use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\Mailer\Mailer;
 use Symfony\Component\Mailer\Transport;
@@ -40,7 +39,7 @@ class EmailTask
                 ->text($message);
 
                 //$dsn = 'gmail+smtp://google-account:App-Key@default';
-                $dsn = 'smtp://localhost:1025';
+                $dsn = 'smtp://mailhog:1025';
                 $transport = Transport::fromDsn($dsn);
 
                 $mailer = new Mailer($transport);
